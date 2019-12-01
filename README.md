@@ -19,3 +19,8 @@ cd 2
 npm install
 pbpaste | ./1.js
 ```
+
+To see the `logger.debug` output, set LOG_LEVEL env var to debug. For example:
+```
+pbpaste | LOG_LEVEL=debug ./1.js
+```

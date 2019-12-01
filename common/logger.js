@@ -21,7 +21,8 @@ function stringifyErrorReplacer(key, value) {
 const myFormat = printf(({ level, message, metadata }) => {
   const timestamp = metadata.timestamp;
   delete metadata.timestamp;
-  let logLine = `${timestamp} ${level}: ${message}`;
+  // let logLine = `${timestamp} ${level}: ${message}`;
+  let logLine = `${message}`;
 
   // Only include metadata if it's not empty.
   if (Object.keys(metadata).length) {
