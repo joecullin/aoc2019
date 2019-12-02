@@ -1,7 +1,7 @@
 #!/usr/local/bin/node
 
 const logger = require("../common/logger");
-const readInput = require("../common/readInput");
+const {readLinesNumeric} = require("../common/readInput");
 
 const calculateFuel = mass => {
   const fuel = Math.floor(mass / 3) - 2;
@@ -9,7 +9,7 @@ const calculateFuel = mass => {
   return fuel;
 };
 
-readInput().then(input => {
+readLinesNumeric().then(input => {
   const total = input.reduce((accumulator, currentValue) => {
     return accumulator + calculateFuel(currentValue);
   }, 0);
