@@ -14,11 +14,11 @@ const readCommaSeparatedLineNumeric = () => {
   });
 };
 
-const readCommaSeparatedLine = () => {
+const readCommaSeparatedLines = () => {
   return getStdin().then(input => {
-    return input.trim().split(",");
+    return input.trim().split("\n").map(line => line.split(","));
     resolve();
   });
 };
 
-module.exports = {readLinesNumeric, readCommaSeparatedLineNumeric, readCommaSeparatedLine};
+module.exports = {readLinesNumeric, readCommaSeparatedLineNumeric, readCommaSeparatedLines};
