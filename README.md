@@ -32,4 +32,8 @@ pbpaste | LOG_LEVEL=debug ./1.js
 
 I started dumping some notes & thoughts into [journal.md](journal.md). I'm not sure I'll keep up with that.
 
+# The trophy
+
+(Thanks to Georgia for help with the 3D-printed parts!)
+
 ![Thomas trophy for Advent of Code 2019](/advent_of_code_2019_trophy.png)
