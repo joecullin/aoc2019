@@ -1,6 +1,11 @@
 # Misc notes & thoughts.
 
 ---
+## Day 6
+
+I spent a whole college semester learning clever ways to optimize this sort of thing for speed & memory. I feel like I should be somewhat ashamed of how many times I'm traversing this graph; on the other hand this was a quick and maintainable solution, and a tiny data set.
+
+---
 ## Day 4
 
 Learned about array.prototype.some() today.

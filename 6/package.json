@@ -1,0 +1,8 @@
+{
+  "name": "aoc2019",
+  "version": "1.0.0",
+  "description": "Advent of Code 2019 solutions",
+  "author": "joecullin",
+  "license": "ISC",
+  "dependencies": { }
+}
