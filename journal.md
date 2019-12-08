@@ -1,7 +1,24 @@
 # Misc notes & thoughts.
 
 ---
+## Day 8
+
+I'm enjoying the real-life aspect of the stories this year: production systems with no documentation, gaps in organizational knowledge, mixed up specs, hard-to-understand requirements.
+
+Today's reminds me of an concept, _Chesterton's Fence_, that I heard in one of my favorite podcasts yesterday.
+
+> Unfortunately, images sent via the Digital Sending Network aren't encoded with any normal encoding; instead, they're encoded in a special Space Image Format. _None of the Elves seem to remember why this is the case._
+
+- https://www.econtalk.org/rory-sutherland-on-alchemy/
+- https://en.wikipedia.org/wiki/Wikipedia:Chesterton%27s_fence
+
+I used my favorite character encoding reference site to get a more readable output on the terminal. Reversing black & white worked best.
+- full block: https://graphemica.com/%E2%96%88
+- light shade: https://graphemica.com/%E2%96%91
+
+---
 ## Day 7
+
 
 Too bad js doesn't have a convenient built-in range generator.
 This seems to be a popular idiom:
