@@ -1,5 +1,6 @@
 const { createLogger, format, transports } = require("winston");
 const { combine, timestamp, label, printf, metadata } = format;
+var JSONbig = require('json-bigint');
 
 const logLevelMax = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info";
 
@@ -32,7 +33,7 @@ const myFormat = printf(({ level, message, metadata }) => {
     if (level === "error" && typeof metadata.error === "string") {
       logLine += metadata.error;
     } else {
-      logLine += JSON.stringify(metadata, stringifyErrorReplacer);
+      logLine += JSONbig.stringify(metadata, stringifyErrorReplacer);
     }
   }
   return logLine;

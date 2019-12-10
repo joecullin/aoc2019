@@ -1,18 +1,32 @@
 const logger = require("../common/logger");
 
 const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
-  let i = pointer;
-  let relativeBase = relativeBaseInput;
+  memory = memory.map(val => {
+    return BigInt(val);
+  });
+
+  let i = BigInt(pointer);
+  let relativeBase = BigInt(relativeBaseInput);
   let output;
   let state;
 
+  const dumpMemory = () => {
+    for (let m = 0; m < memory.length; m++) {
+      if (memory[m] !== undefined) {
+        const isCurrent = i === BigInt(m) ? "<--- current" : "";
+        const isRelBase = relativeBase === BigInt(m) ? "<--- relBase" : "";
+        logger.debug(`mem ${m}: ${memory[m]} ${isCurrent} ${isRelBase}`);
+      }
+    }
+  };
+
   const readMemoryLocation = location => {
-    if (location < 0 || location === undefined){
+    if (location < 0 || location === undefined) {
       logger.error("ERROR Tried to read bad memory location!: " + location);
     }
     let value = memory[location];
     if (value === undefined) {
-      value = 0;
+      value = 0n;
       memory[location] = value;
     }
     logger.debug({ message: `readMemoryLocation ${location}`, value });
@@ -49,19 +63,9 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
     return { opcode, paramModes };
   };
 
-  const dumpMemory = () => {
-    for (let m = 0; m < memory.length; m++) {
-      if (memory[m] !== undefined) {
-        const isCurrent = i === m ? "<--- current" : "";
-        const isRelBase = relativeBase === m ? "<--- relBase" : "";
-        logger.debug(`${m}: ${memory[m]} ${isCurrent} ${isRelBase}`);
-      }
-    }
-  };
-
   do {
     logger.debug(`${i} ---------------------------------------------`);
-    // dumpMemory();
+    dumpMemory();
     const instruction = readMemoryLocation(i);
     const instructionDetails = parseInstruction(instruction);
     let opcode = instructionDetails.opcode;
@@ -86,7 +90,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           logger.debug("add", paramValues[0]);
           const opResult = paramValues.reduce((accumulator, currentValue) => {
             return accumulator + currentValue;
-          }, 0);
+          }, 0n);
           return { opResult };
         };
         break;
@@ -98,7 +102,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         compute = paramValues => {
           const opResult = paramValues.reduce((accumulator, currentValue) => {
             return accumulator * currentValue;
-          }, 1);
+          }, 1n);
           return { opResult };
         };
         break;
@@ -181,7 +185,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           memory: [...memory],
           output: inputs.shift(),
           halted: true,
-          pointer: i + 1
+          pointer: i + 1n
         };
       default:
         logger.error(
@@ -190,7 +194,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         return {};
     }
     logger.debug("paramModes", paramModes);
-    const params = readMemorySlice(i + 1, i + 1 + paramCount);
+    const params = readMemorySlice(i + 1n, i + 1n + BigInt(paramCount));
     logger.debug("params", params);
 
     let outputPosition = null;
@@ -199,15 +203,15 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
       switch (mode) {
         case 1:
           // immediate mode
-          outputPosition = outputIndex;
+          outputPosition = BigInt(outputIndex);
           break;
         case 2:
           // relative mode
-          outputPosition = outputIndex + relativeBase;
+          outputPosition = BigInt(outputIndex) + relativeBase;
           break;
         default:
           // position mode (0 or null)
-          outputPosition = readMemoryLocation(i + 1 + outputIndex); // 1 is to skip the instruction at memory slot i. It's param #i, but memory slot i+1 in this instruction.
+          outputPosition = readMemoryLocation(i + 1n + BigInt(outputIndex)); // 1 is to skip the instruction at memory slot i. It's param #i, but memory slot i+1 in this instruction.
           break;
       }
     }
@@ -216,7 +220,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
     );
 
     const paramValues = params.map((param, paramIndex) => {
-      let paramValue = param;
+      let paramValue = BigInt(param);
       if (paramModes[paramIndex] === 1) {
         logger.debug(
           `param #${paramIndex}: (${param}) -- immediate --> ${paramValue}`
@@ -257,15 +261,17 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           `extending memory from ${memory.length - 1} to ${outputPosition}`
         );
       } else if (outputPosition < 0) {
-        logger.error(`ERROR attempt to write to negative address: ${outputPosition}`);
+        logger.error(
+          `ERROR attempt to write to negative address: ${outputPosition}`
+        );
       }
       memory[outputPosition] = result.opResult;
     }
 
     if (result.jumpTo !== undefined) {
-      i = result.jumpTo;
+      i = BigInt(result.jumpTo);
     } else {
-      i += instructionLength;
+      i += BigInt(instructionLength);
     }
 
     if (result.moveRelativeBaseBy) {
@@ -287,7 +293,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
     }
 
     // logger.debug("memory", memory);
-  } while (i - 1 < memory.length);
+  } while (i - 1n < memory.length);
 
   logger.error("ERROR Overran memory with no halt instruction!");
   return;
