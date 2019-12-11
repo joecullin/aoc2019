@@ -29,7 +29,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
       value = 0n;
       memory[location] = value;
     }
-    logger.debug({ message: `readMemoryLocation ${location}`, value });
+    logger.debug({ message: `readMemoryLocation ${location}: ${value}` });
     return value;
   };
 
@@ -63,9 +63,10 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
     return { opcode, paramModes };
   };
 
+  let pass = 0;
   do {
-    logger.debug(`${i} ---------------------------------------------`);
-    dumpMemory();
+    logger.debug(`pass ${pass++} (i=${i}) (relativeBase=${relativeBase}) ---------------------------------------------`);
+    // dumpMemory();
     const instruction = readMemoryLocation(i);
     const instructionDetails = parseInstruction(instruction);
     let opcode = instructionDetails.opcode;
@@ -87,7 +88,9 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 2;
         outputIndex = 2;
         compute = paramValues => {
-          logger.debug("add", paramValues[0]);
+          logger.debug({
+            message: `adding ${paramValues[0]} to ${paramValues[1]}`
+          });
           const opResult = paramValues.reduce((accumulator, currentValue) => {
             return accumulator + currentValue;
           }, 0n);
@@ -100,6 +103,9 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 2;
         outputIndex = 2;
         compute = paramValues => {
+          logger.debug({
+            message: `multiplying ${paramValues[0]} by ${paramValues[1]}`
+          });
           const opResult = paramValues.reduce((accumulator, currentValue) => {
             return accumulator * currentValue;
           }, 1n);
@@ -112,6 +118,11 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 1;
         outputIndex = 0;
         compute = () => {
+
+//JOE stopped here.
+// - add a good debug line to each compute function.
+// then go back and see where I diverge from other example
+
           return { opResult: inputs.shift() };
         };
         break;
@@ -161,7 +172,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 2;
         outputIndex = 2;
         compute = paramValues => {
-          const opResult = paramValues[0] === paramValues[1] ? 1 : 0;
+          const opResult = paramValues[0] == paramValues[1] ? 1 : 0;
           return { opResult };
         };
         break;
@@ -195,7 +206,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
     }
     logger.debug("paramModes", paramModes);
     const params = readMemorySlice(i + 1n, i + 1n + BigInt(paramCount));
-    logger.debug("params", params);
+    logger.debug({ message: "params", params });
 
     let outputPosition = null;
     if (outputIndex !== null) {
@@ -221,11 +232,11 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
 
     const paramValues = params.map((param, paramIndex) => {
       let paramValue = BigInt(param);
-      if (paramModes[paramIndex] === 1) {
+      if (paramModes[paramIndex] == 1) {
         logger.debug(
           `param #${paramIndex}: (${param}) -- immediate --> ${paramValue}`
         );
-      } else if (paramModes[paramIndex] === 2) {
+      } else if (paramModes[paramIndex] == 2) {
         paramValue = readMemoryLocation(paramValue + relativeBase);
         logger.debug(
           `param #${paramIndex}: (${param}) -- relative from ${relativeBase} --> ${paramValue}`
@@ -241,17 +252,20 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
     });
 
     let result = compute(paramValues);
+    logger.debug({ message: `outputPosition: ${outputPosition}` });
 
-    logger.debug(`instruction`, {
-      position: i,
-      relativeBase,
-      instruction,
+    const stringifyBigInt = (val) => {
+      return val===null ? null : val.toString();
+    }
+
+    logger.debug({
+      message: `result:`,
+      instruction: instruction.toString(),
       opcode,
-      instructionLength,
-      params,
-      paramModes,
-      paramValues,
-      outputPosition,
+      params: params.map(p=>stringifyBigInt(p)),
+      paramModes: paramModes.map(p=>stringifyBigInt(p)),
+      paramValues: paramValues.map(p=>stringifyBigInt(p)),
+      outputPosition: stringifyBigInt(outputPosition),
       result
     });
 
