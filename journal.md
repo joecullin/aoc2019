@@ -8,7 +8,7 @@
 
 Made a cheesy visualization for this. It helped me get it right quickly (for example the couple of times I mixed up X & Y, or when I needed to re-orient my angles from 3:00 to noon.) And it was satisfying to watch the end result.
 
-![Solution for part 2](aoc_day10.gif)
+![Solution for part 2](/10/aoc_day10.gif)
 
 ---
 ## Day 9 
