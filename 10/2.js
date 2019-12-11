@@ -6,10 +6,6 @@ const readMap = require("./readMap");
 const { printMap, clearScreen } = require("./printMap");
 
 const findDistance = (a, b) => {
-  // (Overly verbose b/c somehow I got it in my head that
-  // I could square x by writing x^2, and I had to unpack
-  // it value by value to see what I was doing wrong.)
-
   if (a.x === b.x) {
     return Math.abs(a.y - b.y);
   } else if (a.y === b.y) {
@@ -17,28 +13,30 @@ const findDistance = (a, b) => {
   } else {
     const sideX = Math.abs(a.x - b.x);
     const sideY = Math.abs(a.y - b.y);
-    const sideZ = Math.sqrt(sideX * sideX + sideY * sideY);
-    return sideZ;
+    return Math.sqrt(Math.pow(sideX, 2) + Math.pow(sideY, 2));
   }
 };
 
-// https://math.stackexchange.com/a/1201367
 const findAngle = (a, b) => {
   // treat "a" as 0,0.
   // x,y represents "b" relative to "a":
   const x = b.x - a.x;
   const y = b.y - a.y;
+  // https://math.stackexchange.com/a/1201367
   // const angle = (Math.atan2(y, x) * 180) / Math.PI;
-  const hmmm = Math.atan2(y, x);
-  const umm = ((hmmm >= 0 ? hmmm : 2 * Math.PI + hmmm) * 360) / (2 * Math.PI);
-  return umm;
+  // That was good enough for part 1, but now:
+  //   - My x axis is upside down, and
+  //   - I want to start at noon.
+  const atan2 = Math.atan2(y, x);
+  const angle =
+    ((atan2 >= 0 ? atan2 : 2 * Math.PI + atan2) * 360) / (2 * Math.PI);
+  return angle;
 };
 
 const visibleCount = ({ x, y, mapData }) => {
   let allOthers = [];
   mapData.forEach((row, toY) => {
     row.forEach((asteroid, toX) => {
-      // const debug = toX === 3 && toY === 2;
       const isSelf = x === toX && y === toY;
       if (asteroid && !isSelf) {
         const distance = findDistance({ x, y }, { x: toX, y: toY });
@@ -75,6 +73,8 @@ const findTargets = ({ x, y, mapData }) => {
 
 readLines().then(input => {
   const mapData = readMap({ input });
+
+  // part 1: find our base station asteroid.
 
   const visualizeCounts = [];
   const counts = [];
