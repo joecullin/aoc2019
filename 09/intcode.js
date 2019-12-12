@@ -65,7 +65,9 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
 
   let pass = 0;
   do {
-    logger.debug(`pass ${pass++} (i=${i}) (relativeBase=${relativeBase}) ---------------------------------------------`);
+    logger.debug(
+      `\npass ${pass++} (i=${i}) (relativeBase=${relativeBase}) ---------------------------------------------`
+    );
     // dumpMemory();
     const instruction = readMemoryLocation(i);
     const instructionDetails = parseInstruction(instruction);
@@ -88,12 +90,14 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 2;
         outputIndex = 2;
         compute = paramValues => {
-          logger.debug({
-            message: `adding ${paramValues[0]} to ${paramValues[1]}`
-          });
           const opResult = paramValues.reduce((accumulator, currentValue) => {
             return accumulator + currentValue;
           }, 0n);
+          logger.debug({
+            message: `compute: added ${paramValues[0]} to ${
+              paramValues[1]
+            }. result: ${opResult}`
+          });
           return { opResult };
         };
         break;
@@ -109,6 +113,11 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           const opResult = paramValues.reduce((accumulator, currentValue) => {
             return accumulator * currentValue;
           }, 1n);
+          logger.debug({
+            message: `compute: multiplied ${paramValues[0]} by ${
+              paramValues[1]
+            }. result: ${opResult}`
+          });
           return { opResult };
         };
         break;
@@ -118,12 +127,9 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 1;
         outputIndex = 0;
         compute = () => {
-
-//JOE stopped here.
-// - add a good debug line to each compute function.
-// then go back and see where I diverge from other example
-
-          return { opResult: inputs.shift() };
+          const opResult = BigInt(inputs.shift());
+          logger.debug({ message: `compute: read input result: ${opResult}` });
+          return { opResult };
         };
         break;
       case 4:
@@ -133,6 +139,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         outputIndex = null;
         compute = paramValues => {
           output = paramValues[0];
+          logger.debug({ message: `compute: output value: ${output}` });
           logger.info(`OUTPUT: ${output}`);
           state = "output";
           return { opResult: null };
@@ -144,7 +151,21 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 2;
         outputIndex = null;
         compute = paramValues => {
-          return paramValues[0] ? { jumpTo: paramValues[1] } : {};
+          if (paramValues[0]) {
+            logger.debug({
+              message: `compute: jump to ${paramValues[1]} because ${
+                paramValues[0]
+              } is true.`
+            });
+            return { jumpTo: paramValues[1] };
+          } else {
+            logger.debug({
+              message: `compute: do not jump to ${paramValues[1]} because ${
+                paramValues[0]
+              } is not true.`
+            });
+            return {};
+          }
         };
         break;
       case 6:
@@ -153,6 +174,21 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 2;
         outputIndex = null;
         compute = paramValues => {
+          if (!paramValues[0]) {
+            logger.debug({
+              message: `compute: jump to ${paramValues[1]} because ${
+                paramValues[0]
+              } is false.`
+            });
+            return { jumpTo: paramValues[1] };
+          } else {
+            logger.debug({
+              message: `compute: do not jump to ${paramValues[1]} because ${
+                paramValues[0]
+              } is not false.`
+            });
+            return {};
+          }
           return !paramValues[0] ? { jumpTo: paramValues[1] } : {};
         };
         break;
@@ -162,7 +198,22 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 2;
         outputIndex = 2;
         compute = paramValues => {
-          const opResult = paramValues[0] < paramValues[1] ? 1 : 0;
+          let opResult;
+          if (paramValues[0] < paramValues[1]) {
+            opResult = 1n;
+            logger.debug({
+              message: `compute: ${paramValues[0]} is less than ${
+                paramValues[1]
+              }. result: ${opResult}`
+            });
+          } else {
+            opResult = 0n;
+            logger.debug({
+              message: `compute: ${paramValues[0]} is not less than ${
+                paramValues[1]
+              }. result: ${opResult}`
+            });
+          }
           return { opResult };
         };
         break;
@@ -172,7 +223,22 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 2;
         outputIndex = 2;
         compute = paramValues => {
-          const opResult = paramValues[0] == paramValues[1] ? 1 : 0;
+          let opResult;
+          if (paramValues[0] == paramValues[1]) {
+            opResult = 1n;
+            logger.debug({
+              message: `compute: ${paramValues[0]} is equal to ${
+                paramValues[1]
+              }. result: ${opResult}`
+            });
+          } else {
+            opResult = 0n;
+            logger.debug({
+              message: `compute: ${paramValues[0]} is not equal to ${
+                paramValues[1]
+              }. result: ${opResult}`
+            });
+          }
           return { opResult };
         };
         break;
@@ -183,8 +249,9 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         outputIndex = null;
         compute = paramValues => {
           logger.debug({
-            message: `moving relative pointer`,
-            to: paramValues[0]
+            message: `compute: move relativeBase ${relativeBase} by ${
+              paramValues[0]
+            }`
           });
           return { moveRelativeBaseBy: paramValues[0] };
         };
@@ -218,7 +285,8 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           break;
         case 2:
           // relative mode
-          outputPosition = BigInt(outputIndex) + relativeBase;
+          outputPosition =
+            readMemoryLocation(i + 1n + BigInt(outputIndex)) + relativeBase;
           break;
         default:
           // position mode (0 or null)
@@ -227,7 +295,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
       }
     }
     logger.debug(
-      `output param for opcode ${opcode} (param #${outputIndex}), mode=${paramModes[outputIndex]} ==> resolves to position ${outputPosition}`
+      `output (param #${outputIndex} ${params[outputIndex]}), mode=${paramModes[outputIndex]} ==> resolves to position ${outputPosition}`
     );
 
     const paramValues = params.map((param, paramIndex) => {
@@ -254,17 +322,17 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
     let result = compute(paramValues);
     logger.debug({ message: `outputPosition: ${outputPosition}` });
 
-    const stringifyBigInt = (val) => {
-      return val===null ? null : val.toString();
-    }
+    const stringifyBigInt = val => {
+      return val === null ? null : val.toString();
+    };
 
     logger.debug({
       message: `result:`,
       instruction: instruction.toString(),
       opcode,
-      params: params.map(p=>stringifyBigInt(p)),
-      paramModes: paramModes.map(p=>stringifyBigInt(p)),
-      paramValues: paramValues.map(p=>stringifyBigInt(p)),
+      params: params.map(p => stringifyBigInt(p)),
+      paramModes: paramModes.map(p => stringifyBigInt(p)),
+      paramValues: paramValues.map(p => stringifyBigInt(p)),
       outputPosition: stringifyBigInt(outputPosition),
       result
     });
