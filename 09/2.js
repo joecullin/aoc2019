@@ -6,9 +6,9 @@ const runProgram = require("./intcode");
 
 readCommaSeparatedLineNumeric().then(async program => {
   let computer = { memory: [...program] };
-  let inputs = [1];
+  let inputs = [2];
   const result = await runProgram({ inputs, ...computer });
   logger.debug({ message: "result:", result });
-  logger.info("done.");
+
   process.exit(0);
 });

@@ -1,6 +1,11 @@
-const logger = require("../common/logger");
+const sleep = require("../common/sleep");
 
-const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
+const runProgram = async ({
+  memory,
+  inputs,
+  pointer = 0,
+  relativeBaseInput = 0
+}) => {
   memory = memory.map(val => {
     return BigInt(val);
   });
@@ -15,21 +20,21 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
       if (memory[m] !== undefined) {
         const isCurrent = i === BigInt(m) ? "<--- current" : "";
         const isRelBase = relativeBase === BigInt(m) ? "<--- relBase" : "";
-        logger.debug(`mem ${m}: ${memory[m]} ${isCurrent} ${isRelBase}`);
+        console.debug(`mem ${m}: ${memory[m]} ${isCurrent} ${isRelBase}`);
       }
     }
   };
 
   const readMemoryLocation = location => {
     if (location < 0 || location === undefined) {
-      logger.error("ERROR Tried to read bad memory location!: " + location);
+      console.error("ERROR Tried to read bad memory location!: " + location);
     }
     let value = memory[location];
     if (value === undefined) {
       value = 0n;
       memory[location] = value;
     }
-    logger.debug({ message: `readMemoryLocation ${location}: ${value}` });
+    console.debug({ message: `readMemoryLocation ${location}: ${value}` });
     return value;
   };
 
@@ -59,16 +64,18 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
       }
       paramModes[paramIndex] = parseInt(digit);
     }
-    logger.debug({ message: `parsed ${instruction}`, opcode, paramModes });
+    console.debug({ message: `parsed ${instruction}`, opcode, paramModes });
     return { opcode, paramModes };
   };
 
   let pass = 0;
   do {
-    logger.debug(
+    console.debug(
       `\npass ${pass++} (i=${i}) (relativeBase=${relativeBase}) ---------------------------------------------`
     );
-    // dumpMemory();
+    // Slow the program down, so I can capture heap snapshots before it's gigantic.
+    // await sleep(10);
+
     const instruction = readMemoryLocation(i);
     const instructionDetails = parseInstruction(instruction);
     let opcode = instructionDetails.opcode;
@@ -80,7 +87,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
 
     // placeholder compute function
     let compute = () => {
-      logger.error("ERROR Undefined compute function");
+      console.error("ERROR Undefined compute function");
     };
 
     switch (opcode) {
@@ -93,7 +100,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           const opResult = paramValues.reduce((accumulator, currentValue) => {
             return accumulator + currentValue;
           }, 0n);
-          logger.debug({
+          console.debug({
             message: `compute: added ${paramValues[0]} to ${
               paramValues[1]
             }. result: ${opResult}`
@@ -107,13 +114,13 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 2;
         outputIndex = 2;
         compute = paramValues => {
-          logger.debug({
+          console.debug({
             message: `multiplying ${paramValues[0]} by ${paramValues[1]}`
           });
           const opResult = paramValues.reduce((accumulator, currentValue) => {
             return accumulator * currentValue;
           }, 1n);
-          logger.debug({
+          console.debug({
             message: `compute: multiplied ${paramValues[0]} by ${
               paramValues[1]
             }. result: ${opResult}`
@@ -128,7 +135,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         outputIndex = 0;
         compute = () => {
           const opResult = BigInt(inputs.shift());
-          logger.debug({ message: `compute: read input result: ${opResult}` });
+          console.debug({ message: `compute: read input result: ${opResult}` });
           return { opResult };
         };
         break;
@@ -139,8 +146,8 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         outputIndex = null;
         compute = paramValues => {
           output = paramValues[0];
-          logger.debug({ message: `compute: output value: ${output}` });
-          logger.info(`OUTPUT: ${output}`);
+          console.debug({ message: `compute: output value: ${output}` });
+          console.info(`OUTPUT: ${output}`);
           state = "output";
           return { opResult: null };
         };
@@ -152,14 +159,14 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         outputIndex = null;
         compute = paramValues => {
           if (paramValues[0]) {
-            logger.debug({
+            console.debug({
               message: `compute: jump to ${paramValues[1]} because ${
                 paramValues[0]
               } is true.`
             });
             return { jumpTo: paramValues[1] };
           } else {
-            logger.debug({
+            console.debug({
               message: `compute: do not jump to ${paramValues[1]} because ${
                 paramValues[0]
               } is not true.`
@@ -175,14 +182,14 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         outputIndex = null;
         compute = paramValues => {
           if (!paramValues[0]) {
-            logger.debug({
+            console.debug({
               message: `compute: jump to ${paramValues[1]} because ${
                 paramValues[0]
               } is false.`
             });
             return { jumpTo: paramValues[1] };
           } else {
-            logger.debug({
+            console.debug({
               message: `compute: do not jump to ${paramValues[1]} because ${
                 paramValues[0]
               } is not false.`
@@ -201,14 +208,14 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           let opResult;
           if (paramValues[0] < paramValues[1]) {
             opResult = 1n;
-            logger.debug({
+            console.debug({
               message: `compute: ${paramValues[0]} is less than ${
                 paramValues[1]
               }. result: ${opResult}`
             });
           } else {
             opResult = 0n;
-            logger.debug({
+            console.debug({
               message: `compute: ${paramValues[0]} is not less than ${
                 paramValues[1]
               }. result: ${opResult}`
@@ -226,14 +233,14 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           let opResult;
           if (paramValues[0] == paramValues[1]) {
             opResult = 1n;
-            logger.debug({
+            console.debug({
               message: `compute: ${paramValues[0]} is equal to ${
                 paramValues[1]
               }. result: ${opResult}`
             });
           } else {
             opResult = 0n;
-            logger.debug({
+            console.debug({
               message: `compute: ${paramValues[0]} is not equal to ${
                 paramValues[1]
               }. result: ${opResult}`
@@ -248,7 +255,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         paramCount = 1;
         outputIndex = null;
         compute = paramValues => {
-          logger.debug({
+          console.debug({
             message: `compute: move relativeBase ${relativeBase} by ${
               paramValues[0]
             }`
@@ -258,7 +265,7 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
         break;
       case 99:
         // halt
-        logger.debug({ message: `halt at position ${i}`, output, pointer });
+        console.debug({ message: `halt at position ${i}`, output, pointer });
         return {
           memory: [...memory],
           output: inputs.shift(),
@@ -266,14 +273,14 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           pointer: i + 1n
         };
       default:
-        logger.error(
+        console.error(
           `ERROR bad opcode in instruction '${instruction}' at position ${i}: '${opcode}'`
         );
         return {};
     }
-    logger.debug("paramModes", paramModes);
+    console.debug("paramModes", paramModes);
     const params = readMemorySlice(i + 1n, i + 1n + BigInt(paramCount));
-    logger.debug({ message: "params", params });
+    console.debug({ message: "params", params });
 
     let outputPosition = null;
     if (outputIndex !== null) {
@@ -294,25 +301,25 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
           break;
       }
     }
-    logger.debug(
+    console.debug(
       `output (param #${outputIndex} ${params[outputIndex]}), mode=${paramModes[outputIndex]} ==> resolves to position ${outputPosition}`
     );
 
     const paramValues = params.map((param, paramIndex) => {
       let paramValue = BigInt(param);
       if (paramModes[paramIndex] == 1) {
-        logger.debug(
+        console.debug(
           `param #${paramIndex}: (${param}) -- immediate --> ${paramValue}`
         );
       } else if (paramModes[paramIndex] == 2) {
         paramValue = readMemoryLocation(paramValue + relativeBase);
-        logger.debug(
+        console.debug(
           `param #${paramIndex}: (${param}) -- relative from ${relativeBase} --> ${paramValue}`
         );
       } else {
         const paramPosition = param;
         paramValue = readMemoryLocation(paramPosition);
-        logger.debug(
+        console.debug(
           `param #${paramIndex}: (${param}) -- memory[${paramPosition}] --> ${paramValue}`
         );
       }
@@ -320,13 +327,13 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
     });
 
     let result = compute(paramValues);
-    logger.debug({ message: `outputPosition: ${outputPosition}` });
+    console.debug({ message: `outputPosition: ${outputPosition}` });
 
     const stringifyBigInt = val => {
       return val === null ? null : val.toString();
     };
 
-    logger.debug({
+    console.debug({
       message: `result:`,
       instruction: instruction.toString(),
       opcode,
@@ -339,11 +346,11 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
 
     if (result.opResult !== null) {
       if (outputPosition >= memory.length) {
-        logger.debug(
+        console.debug(
           `extending memory from ${memory.length - 1} to ${outputPosition}`
         );
       } else if (outputPosition < 0) {
-        logger.error(
+        console.error(
           `ERROR attempt to write to negative address: ${outputPosition}`
         );
       }
@@ -374,10 +381,10 @@ const runProgram = ({ memory, inputs, pointer = 0, relativeBaseInput = 0 }) => {
       }
     }
 
-    // logger.debug("memory", memory);
+    // console.debug("memory", memory);
   } while (i - 1n < memory.length);
 
-  logger.error("ERROR Overran memory with no halt instruction!");
+  console.error("ERROR Overran memory with no halt instruction!");
   return;
 };
 

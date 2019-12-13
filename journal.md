@@ -13,8 +13,13 @@ Made a cheesy visualization for this. It helped me get it right quickly (for exa
 ---
 ## Day 9 
 
-Stalled on this one. Setting it aside to revisit in a day or two. (I'm sure I'll be forced to, based on another extension to Intcode.)
+Part 1: I converted everything to use BigInt. I don't think I actually needed it, but it was interesting to try. Took me a while to find some small gotchas like `===` working differently than I expected, plus some silly mistakes on my part.
 
+Part 2: Out-of-memory errors on my first try. Garbage collection is one of those things I only notice when it doesn't work well. I think I could have bumped the memory limit high enough with an env setting like `NODE_OPTIONS="--max_old_space_size=xxxx`, but I took the opportunity to learn more about memory troubleshooting in node. I set `NODE_OPTIONS=--inspect` and then took a few heap snapshots in chrome. It turned out my logger package was the culprit. I'm using a popular node module, winston, but it could be my custom format functions.
+
+I had almost 9 million lines of output after a successful run.
+
+I didn't dig into that further and try to improve my formatter functions. They haven't been that useful anyway. Switching all my logger.debug calls to console.debug drastically shrunk the memory usage. I think I'll go back to that for now.
 
 ---
 ## Day 8
