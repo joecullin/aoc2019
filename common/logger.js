@@ -1,6 +1,6 @@
 const { createLogger, format, transports } = require("winston");
 const { combine, timestamp, label, printf, metadata } = format;
-var JSONbig = require('json-bigint');
+var JSONbig = require("json-bigint");
 
 const logLevelMax = process.env.LOG_LEVEL ? process.env.LOG_LEVEL : "info";
 
@@ -46,4 +46,3 @@ const logger = createLogger({
 });
 
 module.exports = logger;
-
