@@ -4,5 +4,7 @@
   "description": "Advent of Code 2019 solutions",
   "author": "joecullin",
   "license": "ISC",
-  "dependencies": { }
+  "dependencies": {
+    "mathjs": "^6.2.5"
+  }
 }
