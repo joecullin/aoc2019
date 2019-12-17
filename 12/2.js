@@ -4,7 +4,8 @@ const logger = require("../common/logger-simple");
 const { readLines } = require("../common/readInput");
 const readMap = require("./readMap");
 const sleep = require("../common/sleep");
-const { printMap } = require("./printMap");
+var levelup = require("levelup");
+var leveldown = require("leveldown");
 
 const maxSteps = 4686774924;
 // const maxSteps = 10000;
@@ -15,16 +16,15 @@ let step = 1;
 let thisPosition;
 let velocityChange;
 
-const seenBucketSize = 100000; // max 100000000;
-let seenBucketIndex = 0;
-let seen = [new Uint8Array(seenBucketSize + 1)];
+let seenBuckets = {};
+let seen = [];
 let seenKey = "";
 let keyValues = [];
 
-// Generate shorter (but still unique) array keys. Sort of like base-840 encoding.
-// I only need to go one-way, so I took some shortcuts with chunks & ordering.
+// Generate shorter (but still unique) array keys.
+// I only need to go one-way, so I took shortcuts with chunks & ordering.
 const alphabet =
-  "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_-+={[]}|/<,>.~`¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƀƁƂƃƄƅƆƇƈƉƊƋƌƍƎƏƐƑƒƓƔƕƖƗƘƙƚƛƜƝƞƟƠơƢƣƤƥƦƧƨƩƪƫƬƭƮƯưƱƲƳƴƵƶƷƸƹƺƻƼƽƾƿǀǁǂǃǄǅǆǇǈǉǊǋǌǍǎǏǐǑǒǓǔǕǖǗǘǙǚǛǜǝǞǟǠǡǢǣǤǥǦǧǨǩǪǫǬǭǮǯǰǱǲǳǴǵǶǷǸǹǺǻǼǽǾǿȀȁȂȃȄȅȆȇȈȉȊȋȌȍȎȏȐȑȒȓȔȕȖȗȘșȚțȜȝȞȟȠȡȢȣȤȥȦȧȨȩȪȫȬȭȮȯȰȱȲȳȴȵȶȷȸȹȺȻȼȽȾȿɀɁɂɃɄɅɆɇɈɉɊɋɌɍɎɏɐɑɒɓɔɕɖɗɘəɚɛɜɝɞɟɠɡɢɣɤɥɦɧɨɩɪɫɬɭɮɯɰɱɲɳɴɵɶɷɸɹɺɻɼɽɾɿʀʁʂʃʄʅʆʇʈʉʊʋʌʍʎʏʐʑʒʓʔʕʖʗʘʙʚʛʜʝʞʟʠʡʢʣʤʥʦʧʨʩʪʫʬʭʮʯʰʱʲʳʴʵʶʷʸʹʺʻʼʽʾʿˀˁ˂˃˄˅ˆˇˈˉˊˋˌˍˎˏːˑ˒˓˔˕˖˗˘˙˚˛˜˝˞˟ˠˡˢˣˤ˥˦˧˨˩˪˫ˬ˭ˮ˯˰˱˲˳˴˵˶˷˸˹˺˻˼˽˾˿̀́ͰͱͲͳʹ͵Ͷͷͺͻͼͽ;Ϳ΄΅Ά·ΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώϏϐϑϒϓϔϕϖϗϘϙϚϛϜϝϞϟϠϡϢϣϤϥϦϧϨϩϪϫϬϭϮϯϰϱϲϳϴϵ϶ϷϸϹϺϻϼϽϾϿЀЁЂЃЄЅІЇЈ";
+  "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const toRange = alphabet.split("");
 const toBase = toRange.length;
 const fromRange = toRange.slice(0, 12);
@@ -104,29 +104,46 @@ readLines().then(async input => {
     });
     packKey();
 
-    // have we seen this state before?
-    for (let i = 0; i < seenBucketIndex; i++) {
-      if (seen[i][seenKey]) {
-        logger.info(`repeated state at step #${step}!`);
-        foundRepeat = true;
-      }
+    const bucketId = seenKey.substring(0, 2);
+    try {
+      seen = levelup(leveldown("./data/db" + bucketId));
+    } catch (err) {
+      logger.info(`Error creating/opening bucket '${bucketId}`, err);
     }
 
-    if (step % seenBucketSize === 0) {
-      seen.push(new Uint8Array(seenBucketSize + 1));
-      seenBucketIndex++;
+    if (seenBuckets[bucketId]) {
+      try {
+        await seen.get(seenKey);
+        logger.info(`repeated state at step #${step}! for ${seenKey}`);
+        foundRepeat = true;
+      } catch (err) {
+        // We expect lots of notFound errors. Only report other errors.
+        if (!err.notFound) {
+          logger.info(`GET error. step=${step} key=${seenKey}`, err);
+        }
+      }
+    } else {
+      seenBuckets[bucketId] = true;
     }
-    seen[seenBucketIndex][seenKey] = 1;
+
+    try {
+      await seen.put(seenKey, "");
+    } catch (err) {
+      logger.info(`error in put for '${seenKey}'`, err);
+    }
+
+    try {
+      await seen.close();
+    } catch (err) {
+      logger.info(`error in close for '${seenKey}'`, err);
+    }
 
     if (step % 100000 === 0) {
       logger.debug(`step ${step} (` + step.toString().length + ` digits)`);
-      // printMap({ mapData: theMap });
     }
 
     step++;
   }
-
-  // logger.debug("seen contents", seen);
 
   logger.debug(
     `pausing at step ${step} (` + step.toString().length + ` digits)`
