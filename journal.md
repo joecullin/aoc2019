@@ -4,6 +4,14 @@
 
 
 ---
+## Day 12
+
+I had fun trying to see how far I could get with brute force on part 2. Learned more about how much memory strings & booleans & arrays & sets use, learned about Uint8Array, learned about closures and garbage collection, wrote a little base-840 converter to get my array keys smaller, tried out levelup/leveldown, and then finally gave up and googled for a hint.
+
+All the memory optimization stuff (trying different things and then comparing the actual memory usage via heap snapshots in chrome) actually gave me a couple ideas for an occasional problem that some of our users are seeing in a homegrown CMS app at work.
+
+
+---
 ## Day 10
 
 Made a cheesy visualization for this. It helped me get it right quickly (for example the couple of times I mixed up X & Y, or when I needed to re-orient my angles from 3:00 to noon.) And it was satisfying to watch the end result.
