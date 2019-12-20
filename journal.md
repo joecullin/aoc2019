@@ -4,7 +4,21 @@
 
 
 ---
+## Day 16
+
+After a few busy days with no free time, I've been skipping around to find the independent (i.e. not a continuation of intocode) puzzles.
+
+Part one was easy.
+
+I spent a while trying to figure out part two. I was pretty close but missed one key insight. Finally broke down and googled for hints, and they made sense right away. But then I wasn't very motivated to actually write the few lines of code to implement it.
+
+If the whole challenge is to figure out the trick, and then the implementation only takes a few lines of code, that doesn't bring me much joy. My main goal for aoc2019 was to learn some new things in nodejs.
+
+I'm pausing for now and switching my focus to some other back-burner projects, like maybe starting an overhaul of https://www.joecullin.com/. My cobbler's-kids justification for its dated architecture & look is wearing thin, and it seems like a fun winter-break goal.
+
+---
 ## Day 12
+
 
 I had fun trying to see how far I could get with brute force on part 2. Learned more about how much memory strings & booleans & arrays & sets use, learned about Uint8Array, learned about closures and garbage collection, wrote a little base-840 converter to get my array keys smaller, tried out levelup/leveldown, and then finally gave up and googled for a hint.
 
